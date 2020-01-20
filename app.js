@@ -1,5 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
+//import './app.css'
+
 
 const _Facty = () => <p></p>
 
@@ -10,7 +12,7 @@ const factyDOM = {
 		class: undefined,
 		children: {
 			0 : {
-				tag: "SECTION",
+				tag: "DIV",
 				id: undefined,
 				class: undefined,
 				children: {
@@ -19,15 +21,35 @@ const factyDOM = {
 						id: undefined,
 						class: undefined,
 						children: {
-							"facty": <facty>Welcome to Factify</facty>
+							0 : {
+								tag: "DIV",
+								id: undefined,
+								class: undefined,
+								children: {
+									0 : {
+										tag: "H1",
+										id: undefined,
+										class: undefined,
+										children: {},
+										facty: {
+											start: 0,
+											end: 7,
+											element: "Welcome to Factify"
+										}
+									}
+								}
+							}
 						}
 					},
 					1 : {
 						tag: "DIV",
 						id: undefined,
 						class: undefined,
-						children: {
-							"facty": <facty>We have DOMS</facty>
+						children: {},
+						facty: {
+							start: undefined,
+							end: undefined,
+							element: <p id="facty">We have DOMS</p>
 						}
 					}
 				}
@@ -36,29 +58,25 @@ const factyDOM = {
 	}
 }
 
-class TestDOM extends React.Component {
-	render() {
-		return (
-			<html>
-				<body>
-					<facty>test</facty>
-				</body>
-			</html>
-		)
-	}
-}
-
 window.addEventListener('load', function() {
 	console.log(`Getting DOM from factys.facity.com for ${window.location.href}`)
 	synthDOM(document.activeElement, factyDOM[0])
 })
 
+const clickFacty = (_ele) => {
+	const ele = _ele
+	return e => {
+		console.log(`You clicked ${ele}!`)
+	}
+}
+
 const synthDOM = (base, synth) => {
 	//console.log(`${base.parentElement.tagName} -> ${base.tagName}`)
 	if(base !== undefined && synth !== undefined && "tag" in synth && base.tagName === synth.tag){
-		if("facty" in synth.children){
+		if("facty" in synth){
 			console.log("render")
-			ReactDOM.render(synth.children.facty, base)
+			let facty = synthElement(synth.facty, base)
+			//ReactDOM.render(facty, base)
 		}else{
 			let base_children = base.children
 			for(let i in base_children){
@@ -67,6 +85,28 @@ const synthDOM = (base, synth) => {
 			}
 		}
 	}
+}
+
+//Prepare the facty for the base
+const synthElement = (facty, base) => {
+	if(base.tagName === "DIV"){
+		let rend = <div style={{display: "flex", background: "#3fff6faf"}} onClick={clickFacty(facty.element)}>{base}</div>
+		ReactDOM.render(rend, base)
+		return null
+	}
+	//For text cases
+	let baseHTML = base.innerHTML
+	let left = baseHTML.slice(0, facty.start)
+	let middle = baseHTML.slice(facty.start, facty.end)
+	let right = baseHTML.slice(facty.end,)
+	baseHTML = left + "" + right
+	console.log([left, facty, right])
+	let rend = (<div style={{display:"flex"}}>
+			{left}
+			<div style={{display: "flex", background: "#3fff6faf"}} onClick={clickFacty(facty.element)}>{middle}</div>
+			{right}
+		</div>)
+	ReactDOM.render(rend, base)
 }
 
 const _synthDOM = (base, synth) => {
