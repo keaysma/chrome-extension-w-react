@@ -8,7 +8,7 @@ const facty = ""
 
 window.addEventListener('load', function() {
 	console.log(`Getting DOM from factys.facity.com for ${window.location.href}`)
-	fetch(`${facty}`,
+	fetch(`${facty}/content`,
 		headers: new Headers({'Content-Type': 'application/json'}),
 		body: JSON.stringify({address:window.location.href})
 	)
