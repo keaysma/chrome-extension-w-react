@@ -1,66 +1,20 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-//import './app.css'
+import fetch from 'node-fetch'
+import CircularJSON from 'circular-json'
 
-
-const _Facty = () => <p></p>
-
-const factyDOM = {
-	0 : {
-		tag: "BODY",
-		id: undefined,
-		class: undefined,
-		children: {
-			0 : {
-				tag: "DIV",
-				id: undefined,
-				class: undefined,
-				children: {
-					0 : {
-						tag: "DIV",
-						id: undefined,
-						class: undefined,
-						children: {
-							0 : {
-								tag: "DIV",
-								id: undefined,
-								class: undefined,
-								children: {
-									0 : {
-										tag: "H1",
-										id: undefined,
-										class: undefined,
-										children: {},
-										facty: {
-											start: 0,
-											end: 7,
-											element: "Welcome to Factify"
-										}
-									}
-								}
-							}
-						}
-					},
-					1 : {
-						tag: "DIV",
-						id: undefined,
-						class: undefined,
-						children: {},
-						facty: {
-							start: undefined,
-							end: undefined,
-							element: <p id="facty">We have DOMS</p>
-						}
-					}
-				}
-			}
-		}
-	}
-}
+//var factyDOM = {}
+const facty = ""
 
 window.addEventListener('load', function() {
 	console.log(`Getting DOM from factys.facity.com for ${window.location.href}`)
-	synthDOM(document.activeElement, factyDOM[0])
+	fetch(`${facty}`,
+		headers: new Headers({'Content-Type': 'application/json'}),
+		body: JSON.stringify({address:window.location.href})
+	)
+	.then(res => res.text())
+	.then(res => CircularJSON.parse(res))
+	.then(res => synthDOM(document.activeElement, res[0]))
 })
 
 const clickFacty = (_ele) => {
@@ -72,7 +26,7 @@ const clickFacty = (_ele) => {
 
 const synthDOM = (base, synth) => {
 	//console.log(`${base.parentElement.tagName} -> ${base.tagName}`)
-	if(base !== undefined && synth !== undefined && "tag" in synth && base.tagName === synth.tag){
+	if(base !== undefined && synth !== undefined && synth.type === "tag" && base.tagName === synth.name){
 		if("facty" in synth){
 			console.log("render")
 			let facty = synthElement(synth.facty, base)
