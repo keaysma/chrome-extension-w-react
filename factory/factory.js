@@ -16,8 +16,10 @@ const fetch_DOM = address =>  fetch(address)
 	.then(res => res.text())
 	//JSONify DOM
 	.then(res => parse(res))
+	//Remove text nodes, only keep HTML tags
+	.then(res => top_DOM_clean(res))
 	//Remove Header, contains unwanted bulk (scripts)
-	.then(res => behead(res))
+	.then(res => behead(res[0]))
 	//Store DOM for usage
 	.then(res => DOM_CACHE[address] = res)
 	//.then(res => console.log(util.inspect(res, false, 3, true)))
@@ -35,24 +37,56 @@ const read_cache_from_disk = file => {
 
 //Remove the data from <head></head> from a DOM object
 const behead = DOM => {
-	if(typeof DOM !== 'object' || DOM === [])
+	console.log(`behead ${util.inspect(DOM)}`)
+	if(typeof DOM !== 'object' || DOM === []){
 		return DOM
-	let document_children = DOM[0].children
-	let head_idx
-	document_children.forEach((child, idx) => {
-		if(child.name === 'head')
-			head_idx = idx
+	}
+	DOM.children.forEach(child => {
+		if(child.name === 'head'){
+			child.children = []
+		}
 	})
-	if(head_idx !== undefined)
-		document_children.splice(head_idx, 1)
-	DOM[0].children = document_children
+	return DOM
+}
+
+//Remove all non-tags from DOM
+const top_DOM_clean = DOMS => {
+	var cleaned_DOMS = []
+	DOMS.forEach(dom => {
+		let cleaned_dom = DOM_clean(dom)
+		if(cleaned_dom !== undefined)
+			cleaned_DOMS = cleaned_DOMS.concat([cleaned_dom])
+	})
+	return cleaned_DOMS
+}
+
+const DOM_clean = DOM => {
+	//console.log("clean")
+	if(typeof DOM !== 'object' 
+		|| DOM === [] 
+		|| !DOM.hasOwnProperty("type") 
+		|| DOM.type !== "tag"
+		|| !DOM.hasOwnProperty("children")){
+		return undefined
+	}
+	let clean_children = []
+	DOM.children.forEach(child => {
+		if(child.type === 'tag'){
+			clean_children = clean_children.concat([DOM_clean(child)])
+		}
+	})
+	DOM.children = clean_children
+	delete DOM.next
+	delete DOM.prev
+	delete DOM.parent
+	delete DOM.attribs
 	return DOM
 }
 
 const FILE = 'doms.json'
-const DOM_CACHE = read_cache_from_disk(FILE) //{}
+var DOM_CACHE = read_cache_from_disk(FILE) //{}
 
-const PORT = 4386
+const PORT = 3003 //4386
 const server = express()
 	.use(cors())
 	.use(express.json())
@@ -61,10 +95,14 @@ server.post('/content', (req, res) => {
 	let address = req.body['address']
 	console.log(req.body)
 	console.log(address)
+
 	let content
-	if(address in DOM_CACHE)
-		console.log(`cache hit`)
-		content = CircularJSON.stringify(DOM_CACHE[address])
+	if(!DOM_CACHE.hasOwnProperty(address)){
+		console.log(`cache miss`)
+		fetch_DOM(address)
+	}
+	content = CircularJSON.stringify(DOM_CACHE[address])
+
 	res.send({content : content})
 })
 
