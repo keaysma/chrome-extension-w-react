@@ -3,19 +3,66 @@ import ReactDOM from 'react-dom'
 import fetch from 'node-fetch'
 import CircularJSON from 'circular-json'
 
+import util from 'util'
+
 //var factyDOM = {}
-const facty = ""
+const facty_site = "http://108.18.248.41:3003"
+var isRegistered = false;
+var editMode = false;
+/*window.addEventListener('click', function(e) {
+	console.log(`test: ${e.target}`)
+})*/
 
 window.addEventListener('load', function() {
-	console.log(`Getting DOM from factys.facity.com for ${window.location.href}`)
-	fetch(`${facty}/content`,
+	console.log('loaded')
+	//console.log(`Getting DOM from factys.facity.com for ${window.location.href}`)
+	fetch(`${facty_site}/content`, {
+		method: 'POST',
 		headers: new Headers({'Content-Type': 'application/json'}),
-		body: JSON.stringify({address:window.location.href})
-	)
-	.then(res => res.text())
-	.then(res => CircularJSON.parse(res))
-	.then(res => synthDOM(document.activeElement, res[0]))
+		body: JSON.stringify({"address":window.location.href.slice(0, -1)})
+	})
+	.then(res => res.json())
+	.then(res => {console.log(`data: ${util.inspect(res)}`);return res})
+	.then(res => CircularJSON.parse(res["content"]))
+	.then(res => synthDOM(document.activeElement.parentElement, res))
+	.then(res => registerHighlighter())
+	.catch(e => console.log(e))
+
+
+	document.onclick = e => {
+		if(isRegistered && editMode){
+			console.log(`${e.target}`)
+			const _div = document.createElement('div')
+			_div.style.position = 'absolute'
+			_div.style.width = '100vw'
+			_div.style.height = '10vh'
+			const _text = document.createElement('input')
+			const _butn = document.createElement('button')
+
+			_div.appendChild(_text)
+			_div.appendChild(_butn)
+
+			document.activeElement.appendChild(_div)
+			//ReactDOM.render(Commentor(), document.activeElement)
+		}
+	}
 })
+
+const constructFacty = _target => {
+	const target = _target;
+	return () => {
+		console.log(`publishing facty on ${target}`)
+	}
+}
+
+const Commentor = target => {
+	return (
+		<div style={{width:"100vw", height: "100vh"}}>
+			<input></input>
+			<button onClick={constructFacty(target)}>Publish</button>
+		</div>				
+	)
+}
 
 const clickFacty = (_ele) => {
 	const ele = _ele
@@ -25,16 +72,20 @@ const clickFacty = (_ele) => {
 }
 
 const synthDOM = (base, synth) => {
+	//console.log(base)
+	//console.log(synth)
 	//console.log(`${base.parentElement.tagName} -> ${base.tagName}`)
-	if(base !== undefined && synth !== undefined && synth.type === "tag" && base.tagName === synth.name){
+	if(base !== undefined && synth !== undefined && synth.type === "tag" && base.tagName.toLowerCase() === synth.name.toLowerCase()){
+		//console.log("match")
 		if("facty" in synth){
 			console.log("render")
 			let facty = synthElement(synth.facty, base)
 			//ReactDOM.render(facty, base)
 		}else{
-			let base_children = base.children
-			for(let i in base_children){
-				console.log("deeper")
+			let c = base.children
+			//console.log(`${base.tagName} ~ ${c}`)
+			for(let i in c){
+				//console.log("deeper")
 				synthDOM(base.children[i], synth.children[i])
 			}
 		}
@@ -49,7 +100,7 @@ const synthElement = (facty, base) => {
 		return null
 	}
 	//For text cases
-	let baseHTML = base.innerHTML
+	let baseHTML = base.innerText
 	let left = baseHTML.slice(0, facty.start)
 	let middle = baseHTML.slice(facty.start, facty.end)
 	let right = baseHTML.slice(facty.end,)
@@ -61,6 +112,10 @@ const synthElement = (facty, base) => {
 			{right}
 		</div>)
 	ReactDOM.render(rend, base)
+}
+
+const registerHighlighter = () => {
+	isRegistered = true;
 }
 
 const _synthDOM = (base, synth) => {
